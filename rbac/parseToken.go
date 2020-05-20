@@ -60,31 +60,38 @@ func (j *JWT) ParseToken(tokenString string) (*CustomClaims, error) {
 
 //更新token
 func (j *JWT) RefreshToken(tokenString string) (string, error) {
-	jwt.TimeFunc = func() time.Time {
-		return time.Unix(0, 0)
-	}
 
-	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return j.SigningKey, nil
-	})
+	// token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+	// 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+	// 		log.Panicln("unexpected signing method")
+	// 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	// 	}
+	// 	return j.SigningKey, nil
+	// })
 
+	// if err != nil {
+	// 	return "", err
+	// }
+	claims, err := j.ParseToken(tokenString)
 	if err != nil {
-		return "", err
-	}
-
-	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		return "", nil
+	} else {
 		jwt.TimeFunc = time.Now
 		claims.StandardClaims.ExpiresAt = time.Now().Add(1 * time.Hour).Unix()
-		return j.CreateToken(*claims)
+		var token, err_ = j.CreateToken(*claims)
+		return token, err_
 	}
 
-	return "", TokenInvalid
+	// if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+
+	// }
+
 }
 
 func GenerateToken(w string) (string, error) {
 	j := &JWT{[]byte("man")}
 	claims := CustomClaims{
-		"1", "Jaya", "123456", jwt.StandardClaims{
+		"1", w, "123456", jwt.StandardClaims{
 			NotBefore: int64(time.Now().Unix() - 1000),
 			ExpiresAt: int64(time.Now().Unix() + 3600),
 			Issuer:    "man",
@@ -99,4 +106,10 @@ func ParesToken(w string) (string, error) {
 	j := &JWT{[]byte("man")}
 	claims, err := j.ParseToken(w)
 	return claims.Name, err
+}
+
+func RefreshToken(w string) (string, error) {
+	j := &JWT{[]byte("man")}
+	token, err := j.RefreshToken(w)
+	return token, err
 }
