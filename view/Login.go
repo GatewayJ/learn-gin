@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Login 登录接口
 func Login(c *gin.Context) {
 	var up form.LoginForm
 	err := c.ShouldBind(&up)
@@ -22,28 +23,26 @@ func Login(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"msg": "登录失败"})
 		} else {
 			log.Printf("%+v\n", up)
-			c.SetCookie("token", token, 1000, "/", "localhost", false, true)
+			c.SetCookie("token", token, 1000, "/", "localhost", false, false)
 			c.JSON(http.StatusOK, gin.H{"msg": token})
 		}
 	}
 }
 
+// Index 主页接口
 func Index(c *gin.Context) {
-	ua2 := c.Request.Header.Get("token")
-	println("asasasasa", ua2)
-	a, err := rbac.RefreshToken(ua2)
-	println(a)
+	ua2, err := c.Request.Cookie("token")
 	if err != nil {
-		log.Println("ParesToken: ", err.Error())
-		c.JSON(http.StatusOK, gin.H{"msg": "请求token失效1"})
+		log.Println("ParesToken: ", ua2, "err: ", err.Error())
+		c.JSON(http.StatusOK, gin.H{"msg": "请求token失效"})
 	} else {
-		token, err := rbac.RefreshToken(ua2)
+		newToken, err := rbac.RefreshToken(ua2.Value)
 		if err != nil {
-			log.Println("RefreshToken: ", err.Error())
-			c.JSON(http.StatusOK, gin.H{"msg": "请求token失效2"})
+			log.Println("ParesToken: ", ua2, "err: ", err.Error())
+			c.JSON(http.StatusOK, gin.H{"msg": "请求token失效"})
 		} else {
-			c.SetCookie("token", token, 1000, "/", "localhost", false, true)
-			c.JSON(http.StatusOK, gin.H{"msg": token})
+			c.SetCookie("token", newToken, 1000, "/", "localhost", false, false)
+			c.JSON(http.StatusOK, gin.H{"index": "this is index"})
 		}
 	}
 
