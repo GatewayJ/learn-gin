@@ -10,6 +10,12 @@ import (
 )
 
 // Login 登录接口
+// @Summary 登录接口
+// @Description 登录接口
+// @Produce  json
+// @Param user body form.LoginForm true "user"
+// @Success 200 {object}  gin.H
+// @Router /login/ [post]
 func Login(c *gin.Context) {
 	var up form.LoginForm
 	err := c.ShouldBind(&up)
@@ -30,16 +36,23 @@ func Login(c *gin.Context) {
 }
 
 // Index 主页接口
+// @Summary 主页接口
+// @Produce  json
+// @Security ApiKeyAuth
+// @in header
+// @ token Cookie int false "token"
+// @Success 200 {object} gin.H
+// @Router /index/ [GET]
 func Index(c *gin.Context) {
 	ua2, err := c.Request.Cookie("token")
 	if err != nil {
 		log.Println("ParesToken: ", ua2, "err: ", err.Error())
-		c.JSON(http.StatusOK, gin.H{"msg": "请求token失效"})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "请求token失效"})
 	} else {
 		newToken, err := rbac.RefreshToken(ua2.Value)
 		if err != nil {
 			log.Println("ParesToken: ", ua2, "err: ", err.Error())
-			c.JSON(http.StatusOK, gin.H{"msg": "请求token失效"})
+			c.JSON(http.StatusBadRequest, gin.H{"msg": "请求token失效"})
 		} else {
 			c.SetCookie("token", newToken, 1000, "/", "localhost", false, false)
 			c.JSON(http.StatusOK, gin.H{"index": "this is index"})
